@@ -354,7 +354,7 @@
     const toBuy = games.filter(g => g.decision === 'buy');
     const toRetry = games.filter(g => g.decision === 'retry');
     const avg = total ? (games.reduce((s,g) => s + (g.stars||0), 0) / games.filter(g=>g.stars).length || 0).toFixed(1) : '—';
-    const perDay = { 'Ven 27': 0, 'Sam 28': 0, 'Dim 1': 0 };
+    const perDay = { 'Jeu 26': 0,'Ven 27': 0, 'Sam 28': 0, 'Dim 1': 0 };
     games.forEach(g => { if (perDay[g.day] !== undefined) perDay[g.day]++; });
 
     wrap.innerHTML = `
