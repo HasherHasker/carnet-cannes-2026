@@ -1,3 +1,5 @@
+Draft in progress 
+
 # carnet-cannes-2026
 This is   PWA = Progressive Web App
 
