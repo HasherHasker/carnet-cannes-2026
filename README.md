@@ -15,7 +15,7 @@ Concrètement :
 ##v1
 ajouts des jours, Liste, Bilan
 
-##V2
+##V2 en cours
 🔥 Photos compressées
 🗑 Suppression propre
 💾 Backup complet restaurable
