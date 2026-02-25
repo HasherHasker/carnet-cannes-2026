@@ -1,297 +1,782 @@
-<!-- LIGHTBOX -->
-<div class="lightbox" id="lightbox" onclick="closeLightbox()">
-  <span class="lightbox-close">✕</span>
-  <img id="lightboxImg" src="" alt="">
-</div>
-
-<!-- ADD PAGE -->
-<div class="page active" id="page-add">
-  <div class="form-wrap">
-    <div>
-      <div class="field-label">Nom du jeu *</div>
-      <input type="text" id="gameName" placeholder="Ex: Flip 7, Rebirth…">
-    </div>
-    <div>
-      <div class="field-label">Éditeur</div>
-      <input type="text" id="gameEditor" placeholder="Ex: Repos Production…">
-    </div>
-    <div>
-      <div class="field-label">Jour</div>
-      <div class="day-btns">
-        <button class="day-btn on" onclick="selectDay(this,'Jeu 26')">Jeu 26</button>
-        <button class="day-btn" onclick="selectDay(this,'Ven 27')">Ven 27</button>
-        <button class="day-btn" onclick="selectDay(this,'Sam 28')">Sam 28</button>
-        <button class="day-btn" onclick="selectDay(this,'Dim 1')">Dim 1</button>
-      </div>
-    </div>
-    <div>
-      <div class="field-label">Note</div>
-      <div class="stars" id="starRating">
-        <span class="star" onclick="setStars(1)">★</span>
-        <span class="star" onclick="setStars(2)">★</span>
-        <span class="star" onclick="setStars(3)">★</span>
-        <span class="star" onclick="setStars(4)">★</span>
-        <span class="star" onclick="setStars(5)">★</span>
-      </div>
-    </div>
-    <div>
-      <div class="field-label">Décision</div>
-      <div class="pills">
-        <div class="pill buy" onclick="selectDecision('buy',this)">🛒 Acheter</div>
-        <div class="pill retry" onclick="selectDecision('retry',this)">🔄 Retester</div>
-        <div class="pill skip" onclick="selectDecision('skip',this)">✗ Non merci</div>
-      </div>
-    </div>
-    <div>
-      <div class="field-label">Prix repéré</div>
-      <input type="text" id="gamePrice" placeholder="Ex: 35 €">
-    </div>
-    <div>
-      <div class="field-label">Photos</div>
-      <div class="photo-zone">
-        <div class="photo-thumbs" id="newPhotos"></div>
-        <label class="photo-add-btn">
-          <span style="font-size:20px">📷</span> Ajouter une photo
-          <input type="file" accept="image/*" capture="environment" class="photo-input" id="photoInput" onchange="addPhoto(event)" multiple>
-        </label>
-      </div>
-    </div>
-    <div>
-      <div class="field-label">Notes / impressions</div>
-      <textarea id="gameNote" placeholder="Mécanique, thème, durée de partie…"></textarea>
-    </div>
-    <button class="btn-save" id="saveBtn" onclick="saveGame()">ENREGISTRER LE JEU</button>
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Carnet Cannes 2026</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --primary: #ff6b35;
+      --success: #4caf50;
+      --warning: #ff9800;
+      --danger: #f44336;
+      --muted: #999;
+      --border: #eee;
+      --red: #ff4444;
+      --bg: #fafafa;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: #333;
+      line-height: 1.6;
+    }
+    .header {
+      background: white;
+      padding: 1rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+    }
+    .header h1 { font-size: 1.5rem; }
+    .header-stats { font-size: 0.9rem; color: var(--muted); font-weight: 600; }
+    .tabs {
+      display: flex;
+      background: white;
+      border-bottom: 2px solid var(--border);
+      overflow-x: auto;
+    }
+    .tab {
+      flex: 1;
+      padding: 1rem;
+      text-align: center;
+      cursor: pointer;
+      color: var(--muted);
+      border-bottom: 3px solid transparent;
+      transition: all 0.3s;
+    }
+    .tab:hover { background: var(--bg); }
+    .tab.active {
+      color: var(--primary);
+      border-bottom-color: var(--primary);
+      background: white;
+    }
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 1rem;
+    }
+    .page { display: none; }
+    .page.active { display: block; animation: fadeIn 0.3s; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    /* FORM */
+    .form-wrap > div {
+      margin-bottom: 1.5rem;
+    }
+    .field-label {
+      font-weight: 600;
+      font-size: 0.9rem;
+      margin-bottom: 0.5rem;
+      display: block;
+      color: #333;
+    }
+    input[type="text"],
+    textarea {
+      width: 100%;
+      padding: 0.75rem;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 1rem;
+      font-family: inherit;
+    }
+    textarea { resize: vertical; min-height: 100px; }
+    input[type="text"]:focus,
+    textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(255,107,53,0.1);
+    }
+    /* DAY BUTTONS */
+    .day-btns {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+    .day-btn {
+      flex: 1;
+      min-width: 100px;
+      padding: 0.75rem;
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+    .day-btn.on {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+    }
+    /* STARS */
+    .stars {
+      display: flex;
+      gap: 0.5rem;
+      font-size: 2rem;
+      cursor: pointer;
+    }
+    .star {
+      opacity: 0.3;
+      transition: opacity 0.2s;
+    }
+    .star.on {
+      opacity: 1;
+    }
+    /* PILLS */
+    .pills {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+    .pill {
+      flex: 1;
+      min-width: 100px;
+      padding: 0.75rem;
+      background: white;
+      border: 2px solid var(--border);
+      border-radius: 20px;
+      cursor: pointer;
+      text-align: center;
+      font-weight: 600;
+      font-size: 0.9rem;
+      transition: all 0.2s;
+    }
+    .pill.buy.on {
+      background: var(--success);
+      color: white;
+      border-color: var(--success);
+    }
+    .pill.retry.on {
+      background: var(--warning);
+      color: white;
+      border-color: var(--warning);
+    }
+    .pill.skip.on {
+      background: var(--danger);
+      color: white;
+      border-color: var(--danger);
+    }
+    /* PHOTOS */
+    .photo-zone {
+      border: 2px dashed var(--border);
+      border-radius: 8px;
+      padding: 1rem;
+    }
+    .photo-thumbs {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+    .photo-thumb-wrap {
+      position: relative;
+      border-radius: 8px;
+      overflow: hidden;
+      background: var(--border);
+    }
+    .photo-thumb {
+      width: 100%;
+      height: 80px;
+      object-fit: cover;
+      cursor: pointer;
+      display: block;
+    }
+    .photo-del {
+      position: absolute;
+      top: 0;
+      right: 0;
+      background: rgba(0,0,0,0.6);
+      color: white;
+      border: none;
+      cursor: pointer;
+      width: 24px;
+      height: 24px;
+      padding: 0;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .photo-add-btn {
+      display: block;
+      padding: 1rem;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      cursor: pointer;
+      text-align: center;
+      font-weight: 600;
+      color: var(--primary);
+      transition: all 0.2s;
+    }
+    .photo-add-btn:hover {
+      background: white;
+      border-color: var(--primary);
+    }
+    .photo-input {
+      display: none;
+    }
+    /* BUTTONS */
+    .btn-save {
+      width: 100%;
+      padding: 1rem;
+      background: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    .btn-save:hover {
+      background: #ff5722;
+      transform: translateY(-2px);
+    }
+    .btn-save:active {
+      transform: translateY(0);
+    }
+    .btn-save.ok {
+      background: var(--success);
+    }
+    /* LIST */
+    .filter-bar {
+      display: flex;
+      gap: 0.5rem;
+      overflow-x: auto;
+      margin-bottom: 1rem;
+      padding-bottom: 0.5rem;
+    }
+    .chip {
+      padding: 0.5rem 1rem;
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.2s;
+      font-size: 0.9rem;
+    }
+    .chip.on {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+    }
+    .storage-bar {
+      background: var(--bg);
+      padding: 0.75rem;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      margin-bottom: 1rem;
+      display: none;
+    }
+    .storage-bar.visible {
+      display: block;
+    }
+    .game-card {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1rem;
+      margin-bottom: 1rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    .gc-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 0.75rem;
+    }
+    .gc-name {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #333;
+    }
+    .gc-editor {
+      font-size: 0.85rem;
+      color: var(--muted);
+      margin-top: 0.25rem;
+    }
+    .gc-stars {
+      font-size: 1.1rem;
+      color: #ffc107;
+    }
+    .gc-del {
+      cursor: pointer;
+      font-size: 1.3rem;
+      transition: transform 0.2s;
+    }
+    .gc-del:hover {
+      transform: scale(1.2);
+    }
+    .gc-meta {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 0.75rem;
+      flex-wrap: wrap;
+      font-size: 0.85rem;
+    }
+    .badge {
+      display: inline-block;
+      padding: 0.25rem 0.75rem;
+      background: var(--bg);
+      border-radius: 12px;
+      font-weight: 600;
+    }
+    .badge.day {
+      background: #e3f2fd;
+      color: #1976d2;
+    }
+    .badge.buy {
+      background: #c8e6c9;
+      color: #2e7d32;
+    }
+    .badge.retry {
+      background: #ffe0b2;
+      color: #e65100;
+    }
+    .badge.skip {
+      background: #ffcdd2;
+      color: #c62828;
+    }
+    .gc-price {
+      font-weight: 700;
+      color: var(--success);
+    }
+    .gc-note {
+      font-size: 0.9rem;
+      color: #666;
+      margin-bottom: 0.75rem;
+      line-height: 1.4;
+    }
+    .gc-photos {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+      gap: 0.5rem;
+    }
+    .gc-photo {
+      width: 100%;
+      height: 100px;
+      object-fit: cover;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    .gc-photo:hover {
+      transform: scale(1.05);
+    }
+    .empty {
+      text-align: center;
+      padding: 3rem 1rem;
+      color: var(--muted);
+    }
+    .empty-icon {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+    }
+    /* STATS */
+    .stats-wrap {
+      background: white;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    .stat-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .stat-row:last-child {
+      border-bottom: none;
+    }
+    .stat-label {
+      font-weight: 600;
+      color: #666;
+    }
+    .stat-val {
+      font-size: 1.5rem;
+      font-weight: 700;
+    }
+    .stat-val.gold {
+      color: #ffc107;
+    }
+    .stat-val.green {
+      color: var(--success);
+    }
+    .stat-val.orange {
+      color: var(--warning);
+    }
+    .buy-list {
+      background: var(--bg);
+      border-radius: 8px;
+      padding: 1rem;
+      margin-top: 1rem;
+    }
+    .buy-list-title {
+      font-weight: 700;
+      margin-bottom: 0.75rem;
+    }
+    .buy-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 0.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .buy-item:last-child {
+      border-bottom: none;
+    }
+    .buy-item-name {
+      font-weight: 600;
+    }
+    .buy-item-price {
+      color: var(--success);
+      font-weight: 700;
+    }
+    /* LIGHTBOX */
+    .lightbox {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.9);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      padding: 1rem;
+    }
+    .lightbox.open {
+      display: flex;
+    }
+    .lightbox-close {
+      position: absolute;
+      top: 1rem;
+      right: 1.5rem;
+      color: white;
+      font-size: 2rem;
+      cursor: pointer;
+    }
+    #lightboxImg {
+      max-width: 90%;
+      max-height: 90%;
+      object-fit: contain;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>🎲 Carnet Cannes 2026</h1>
+    <div class="header-stats">Total: <span id="totalCount">0</span></div>
   </div>
-</div>
 
-<!-- LIST PAGE -->
-<div class="page" id="page-list">
-  <div class="filter-bar">
-    <div class="chip on" onclick="setFilter('all',this)">Tous</div>
-    <div class="chip" onclick="setFilter('buy',this)">🛒 Acheter</div>
-    <div class="chip" onclick="setFilter('retry',this)">🔄 Retester</div>
-    <div class="chip" onclick="setFilter('skip',this)">✗ Non</div>
-    <div class="chip" onclick="setFilter('photo',this)">📷 Avec photos</div>
+  <div class="tabs">
+    <div class="tab active" onclick="showTab('add')">➕ Ajouter</div>
+    <div class="tab" onclick="showTab('list')">📋 Liste</div>
+    <div class="tab" onclick="showTab('stats')">📊 Stats</div>
   </div>
-  <div class="storage-bar" id="storageBar"></div>
-  <div class="list-wrap" id="gameList"></div>
-</div>
 
-<!-- STATS PAGE -->
-<div class="page" id="page-stats">
-  <div class="stats-wrap" id="statsWrap"></div>
-</div>
+  <div class="container">
+    <!-- LIGHTBOX -->
+    <div class="lightbox" id="lightbox" onclick="closeLightbox()">
+      <span class="lightbox-close">✕</span>
+      <img id="lightboxImg" src="" alt="">
+    </div>
 
-<script>
-const DB_KEY = 'cannes2026_v2';
-let games = [];
-let currentStars = 0, currentDecision = '', currentDay = 'Jeu 26', currentFilter = 'all';
-let pendingPhotos = [];
-
-try { games = JSON.parse(localStorage.getItem(DB_KEY) || '[]'); } catch(e) { games = []; }
-document.getElementById('totalCount').textContent = games.length;
-
-function save() {
-  try {
-    localStorage.setItem(DB_KEY, JSON.stringify(games));
-    document.getElementById('totalCount').textContent = games.length;
-    checkStorage();
-  } catch(e) {
-    alert('⚠️ Stockage plein ! Supprime quelques photos pour continuer.');
-  }
-}
-
-function checkStorage() {
-  try {
-    const used = new Blob(Object.values(localStorage)).size;
-    const mb = (used / 1024 / 1024).toFixed(1);
-    const bar = document.getElementById('storageBar');
-    bar.textContent = (used > 3*1024*1024 ? `⚠️ Stockage utilisé : ${mb} MB — supprime des photos` : `💾 Stockage utilisé : ${mb} MB`);
-    bar.classList.add('visible');
-  } catch(e) {}
-}
-
-function compressImage(file, maxW=800, quality=0.6) {
-  return new Promise(resolve => {
-    const reader = new FileReader();
-    reader.onload = e => {
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        let w = img.width, h = img.height;
-        if(w > maxW){ h = Math.round(h*maxW/w); w = maxW; }
-        canvas.width = w; canvas.height = h;
-        canvas.getContext('2d').drawImage(img,0,0,w,h);
-        resolve(canvas.toDataURL('image/jpeg', quality));
-      };
-      img.src = e.target.result;
-    };
-    reader.readAsDataURL(file);
-  });
-}
-
-async function addPhoto(event){
-  const files = Array.from(event.target.files);
-  for(const file of files){
-    const dataUrl = await compressImage(file);
-    pendingPhotos.push(dataUrl);
-  }
-  renderPendingPhotos();
-  event.target.value='';
-}
-
-function renderPendingPhotos(){
-  const wrap = document.getElementById('newPhotos');
-  wrap.innerHTML = pendingPhotos.map((p,i)=>`
-    <div class="photo-thumb-wrap">
-      <img class="photo-thumb" src="${p}" onclick="openLightbox('${p}')">
-      <button class="photo-del" onclick="removePendingPhoto(${i})">✕</button>
-    </div>`).join('');
-}
-
-function removePendingPhoto(i){
-  pendingPhotos.splice(i,1);
-  renderPendingPhotos();
-}
-
-function saveGame(){
-  const name = document.getElementById('gameName').value.trim();
-  if(!name){ document.getElementById('gameName').focus(); return; }
-  const game = {
-    id: Date.now(),
-    name,
-    editor: document.getElementById('gameEditor').value.trim(),
-    day: currentDay, stars: currentStars, decision: currentDecision,
-    price: document.getElementById('gamePrice').value.trim(),
-    note: document.getElementById('gameNote').value.trim(),
-    photos: [...pendingPhotos]
-  };
-  games.unshift(game);
-  save();
-  resetForm();
-  const btn = document.getElementById('saveBtn');
-  btn.textContent='✓ ENREGISTRÉ !'; btn.classList.add('ok');
-  setTimeout(()=>{ btn.textContent='ENREGISTRER LE JEU'; btn.classList.remove('ok'); },1500);
-}
-
-function resetForm(){
-  document.getElementById('gameName').value='';
-  document.getElementById('gameEditor').value='';
-  document.getElementById('gamePrice').value='';
-  document.getElementById('gameNote').value='';
-  currentStars=0; currentDecision=''; pendingPhotos=[];
-  document.querySelectorAll('.star').forEach(s=>s.classList.remove('on'));
-  document.querySelectorAll('.pill').forEach(p=>p.classList.remove('on'));
-  document.querySelectorAll('.day-btn').forEach((b,i)=>b.classList.toggle('on', i===0));
-  currentDay='Jeu 26';
-  renderPendingPhotos();
-}
-
-function selectDay(btn, day){
-  document.querySelectorAll('.day-btn').forEach(b=>b.classList.remove('on'));
-  btn.classList.add('on'); currentDay=day;
-}
-function setStars(n){
-  currentStars=n;
-  document.querySelectorAll('.star').forEach((s,i)=>s.classList.toggle('on', i<n));
-}
-function selectDecision(type, el){
-  currentDecision=type;
-  document.querySelectorAll('.pill').forEach(p=>p.classList.remove('on'));
-  el.classList.add('on');
-}
-
-function showTab(name){
-  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
-  document.getElementById('page-'+name).classList.add('active');
-  document.querySelectorAll('.tab')[['add','list','stats'].indexOf(name)].classList.add('active');
-  if(name==='list') renderList();
-  if(name==='stats') renderStats();
-}
-
-function setFilter(f, el){
-  currentFilter=f;
-  document.querySelectorAll('.chip').forEach(c=>c.classList.remove('on'));
-  el.classList.add('on'); renderList();
-}
-
-const decisionMeta = { buy:{label:'🛒 Acheter', cls:'buy'}, retry:{label:'🔄 Retester', cls:'retry'}, skip:{label:'✗ Non merci', cls:'skip'} };
-function starsStr(n){ return n? '★'.repeat(n)+'☆'.repeat(5-n) : '—'; }
-
-function renderList(){
-  checkStorage();
-  let filtered = currentFilter==='all' ? games
-    : currentFilter==='photo' ? games.filter(g=>g.photos && g.photos.length)
-    : games.filter(g=>g.decision===currentFilter);
-  const el=document.getElementById('gameList');
-  if(!filtered.length){
-    el.innerHTML='<div class="empty"><div class="empty-icon">🎲</div>Aucun jeu ici encore.</div>';
-    return;
-  }
-  el.innerHTML = filtered.map(g=>`
-    <div class="game-card ${g.decision||''}">
-      <div class="gc-top">
+    <!-- ADD PAGE -->
+    <div class="page active" id="page-add">
+      <div class="form-wrap">
         <div>
-          <div class="gc-name">${g.name}</div>
-          ${g.editor?`<div class="gc-editor">${g.editor}</div>`:''}
+          <div class="field-label">Nom du jeu *</div>
+          <input type="text" id="gameName" placeholder="Ex: Flip 7, Rebirth…">
         </div>
-        <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
-          <div class="gc-stars">${starsStr(g.stars)}</div>
-          <div class="gc-del" onclick="deleteGame(${g.id})">🗑</div>
+        <div>
+          <div class="field-label">Éditeur</div>
+          <input type="text" id="gameEditor" placeholder="Ex: Repos Production…">
         </div>
+        <div>
+          <div class="field-label">Jour</div>
+          <div class="day-btns">
+            <button class="day-btn on" onclick="selectDay(this,'Jeu 26')">Jeu 26</button>
+            <button class="day-btn" onclick="selectDay(this,'Ven 27')">Ven 27</button>
+            <button class="day-btn" onclick="selectDay(this,'Sam 28')">Sam 28</button>
+            <button class="day-btn" onclick="selectDay(this,'Dim 1')">Dim 1</button>
+          </div>
+        </div>
+        <div>
+          <div class="field-label">Note</div>
+          <div class="stars" id="starRating">
+            <span class="star" onclick="setStars(1)">★</span>
+            <span class="star" onclick="setStars(2)">★</span>
+            <span class="star" onclick="setStars(3)">★</span>
+            <span class="star" onclick="setStars(4)">★</span>
+            <span class="star" onclick="setStars(5)">★</span>
+          </div>
+        </div>
+        <div>
+          <div class="field-label">Décision</div>
+          <div class="pills">
+            <div class="pill buy" onclick="selectDecision('buy',this)">🛒 Acheter</div>
+            <div class="pill retry" onclick="selectDecision('retry',this)">🔄 Retester</div>
+            <div class="pill skip" onclick="selectDecision('skip',this)">✗ Non merci</div>
+          </div>
+        </div>
+        <div>
+          <div class="field-label">Prix repéré</div>
+          <input type="text" id="gamePrice" placeholder="Ex: 35 €">
+        </div>
+        <div>
+          <div class="field-label">Photos</div>
+          <div class="photo-zone">
+            <div class="photo-thumbs" id="newPhotos"></div>
+            <label class="photo-add-btn">
+              <span style="font-size:20px">📷</span> Ajouter une photo
+              <input type="file" accept="image/*" capture="environment" class="photo-input" id="photoInput" onchange="addPhoto(event)" multiple>
+            </label>
+          </div>
+        </div>
+        <div>
+          <div class="field-label">Notes / impressions</div>
+          <textarea id="gameNote" placeholder="Mécanique, thème, durée de partie…"></textarea>
+        </div>
+        <button class="btn-save" id="saveBtn" onclick="saveGame()">ENREGISTRER LE JEU</button>
       </div>
-      <div class="gc-meta">
-        <span class="badge day">${g.day}</span>
-        ${g.decision?`<span class="badge ${g.decision}">${decisionMeta[g.decision].label}</span>`:''}
-        ${g.price?`<span class="gc-price">${g.price}</span>`:''}
-        ${g.photos && g.photos.length?`<span style="font-size:12px;color:var(--muted)">📷 ${g.photos.length}</span>`:''}
+    </div>
+
+    <!-- LIST PAGE -->
+    <div class="page" id="page-list">
+      <div class="filter-bar">
+        <div class="chip on" onclick="setFilter('all',this)">Tous</div>
+        <div class="chip" onclick="setFilter('buy',this)">🛒 Acheter</div>
+        <div class="chip" onclick="setFilter('retry',this)">🔄 Retester</div>
+        <div class="chip" onclick="setFilter('skip',this)">✗ Non</div>
+        <div class="chip" onclick="setFilter('photo',this)">📷 Avec photos</div>
       </div>
-      ${g.note?`<div class="gc-note">${g.note}</div>`:''}
-      ${g.photos && g.photos.length?`<div class="gc-photos">${g.photos.map(p=>`<img class="gc-photo" src="${p}" onclick="openLightbox('${p}')" loading="lazy">`).join('')}</div>`:''}
+      <div class="storage-bar" id="storageBar"></div>
+      <div class="list-wrap" id="gameList"></div>
     </div>
-  `).join('');
-}
 
-function deleteGame(id){
-  if(!confirm('Supprimer ce jeu ?')) return;
-  games=games.filter(g=>g.id!==id);
-  save(); renderList();
-}
-
-function openLightbox(src){
-  document.getElementById('lightboxImg').src=src;
-  document.getElementById('lightbox').classList.add('open');
-}
-function closeLightbox(){ document.getElementById('lightbox').classList.remove('open'); }
-
-function renderStats(){
-  const total=games.length;
-  const toBuy=games.filter(g=>g.decision==='buy');
-  const toRetry=games.filter(g=>g.decision==='retry');
-  const rated=games.filter(g=>g.stars);
-  const avg=rated.length?(rated.reduce((s,g)=>s+g.stars,0)/rated.length).toFixed(1):'—';
-  const totalPhotos=games.reduce((s,g)=>s+(g.photos?g.photos.length:0),0);
-  const perDay={'Jeu 26':0,'Ven 27':0,'Sam 28':0,'Dim 1':0};
-  games.forEach(g=>{ if(perDay[g.day]!==undefined) perDay[g.day]++; });
-
-  document.getElementById('statsWrap').innerHTML=`
-    <div class="stat-row"><div class="stat-label">Jeux testés</div><div class="stat-val gold">${total}</div></div>
-    <div class="stat-row"><div class="stat-label">À acheter</div><div class="stat-val green">${toBuy.length}</div></div>
-    <div class="stat-row"><div class="stat-label">À retester</div><div class="stat-val orange">${toRetry.length}</div></div>
-    <div class="stat-row"><div class="stat-label">Note moyenne</div><div class="stat-val gold">${avg}${avg!=='—'?'★':''}</div></div>
-    <div class="stat-row"><div class="stat-label">Photos prises</div><div class="stat-val" style="color:var(--muted)">📷 ${totalPhotos}</div></div>
-    <div class="stat-row" style="flex-direction:column;align-items:stretch;gap:10px">
-      <div class="stat-label">Par jour</div>
-      ${Object.entries(perDay).map(([d,n])=>`
-        <div style="display:flex;justify-content:space-between;align-items:center">
-          <span style="font-size:14px">${d}</span>
-          <span style="font-weight:900;font-size:22px;color:var(--red)">${n} jeu${n>1?'x':''}</span>
-        </div>`).join('')}
+    <!-- STATS PAGE -->
+    <div class="page" id="page-stats">
+      <div class="stats-wrap" id="statsWrap"></div>
     </div>
-    ${toBuy.length?`<div class="buy-list"><div class="buy-list-title">🛒 Liste d'achats</div>${toBuy.map(g=>`<div class="buy-item"><span class="buy-item-name">${g.name}</span><span class="buy-item-price">${g.price||'?'}</span></div>`).join('')}</div>`:''}
-  `;
-}
-</script>
+  </div>
+
+  <script>
+    const DB_KEY = 'cannes2026_v2';
+    let games = [];
+    let currentStars = 0, currentDecision = '', currentDay = 'Jeu 26', currentFilter = 'all';
+    let pendingPhotos = [];
+
+    try { games = JSON.parse(localStorage.getItem(DB_KEY) || '[]'); } catch(e) { games = []; }
+    document.getElementById('totalCount').textContent = games.length;
+
+    function save() {
+      try {
+        localStorage.setItem(DB_KEY, JSON.stringify(games));
+        document.getElementById('totalCount').textContent = games.length;
+        checkStorage();
+      } catch(e) {
+        alert('⚠️ Stockage plein ! Supprime quelques photos pour continuer.');
+      }
+    }
+
+    function checkStorage() {
+      try {
+        const used = new Blob(Object.values(localStorage)).size;
+        const mb = (used / 1024 / 1024).toFixed(1);
+        const bar = document.getElementById('storageBar');
+        bar.textContent = (used > 3*1024*1024 ? `⚠️ Stockage utilisé : ${mb} MB — supprime des photos` : `💾 Stockage utilisé : ${mb} MB`);
+        bar.classList.add('visible');
+      } catch(e) {}
+    }
+
+    function compressImage(file, maxW=800, quality=0.6) {
+      return new Promise(resolve => {
+        const reader = new FileReader();
+        reader.onload = e => {
+          const img = new Image();
+          img.onload = () => {
+            const canvas = document.createElement('canvas');
+            let w = img.width, h = img.height;
+            if(w > maxW){ h = Math.round(h*maxW/w); w = maxW; }
+            canvas.width = w; canvas.height = h;
+            canvas.getContext('2d').drawImage(img,0,0,w,h);
+            resolve(canvas.toDataURL('image/jpeg', quality));
+          };
+          img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    async function addPhoto(event){
+      const files = Array.from(event.target.files);
+      for(const file of files){
+        const dataUrl = await compressImage(file);
+        pendingPhotos.push(dataUrl);
+      }
+      renderPendingPhotos();
+      event.target.value='';
+    }
+
+    function renderPendingPhotos(){
+      const wrap = document.getElementById('newPhotos');
+      wrap.innerHTML = pendingPhotos.map((p,i)=>`
+        <div class="photo-thumb-wrap">
+          <img class="photo-thumb" src="${p}" onclick="event.stopPropagation(); openLightbox(this.src)">
+          <button class="photo-del" onclick="removePendingPhoto(${i})">✕</button>
+        </div>`).join('');
+    }
+
+    function removePendingPhoto(i){
+      pendingPhotos.splice(i,1);
+      renderPendingPhotos();
+    }
+
+    function saveGame(){
+      const name = document.getElementById('gameName').value.trim();
+      if(!name){ document.getElementById('gameName').focus(); return; }
+      const game = {
+        id: Date.now(),
+        name,
+        editor: document.getElementById('gameEditor').value.trim(),
+        day: currentDay, stars: currentStars, decision: currentDecision,
+        price: document.getElementById('gamePrice').value.trim(),
+        note: document.getElementById('gameNote').value.trim(),
+        photos: [...pendingPhotos]
+      };
+      games.unshift(game);
+      save();
+      resetForm();
+      const btn = document.getElementById('saveBtn');
+      btn.textContent='✓ ENREGISTRÉ !'; btn.classList.add('ok');
+      setTimeout(()=>{ btn.textContent='ENREGISTRER LE JEU'; btn.classList.remove('ok'); },1500);
+    }
+
+    function resetForm(){
+      document.getElementById('gameName').value='';
+      document.getElementById('gameEditor').value='';
+      document.getElementById('gamePrice').value='';
+      document.getElementById('gameNote').value='';
+      currentStars=0; currentDecision=''; pendingPhotos=[];
+      document.querySelectorAll('.star').forEach(s=>s.classList.remove('on'));
+      document.querySelectorAll('.pill').forEach(p=>p.classList.remove('on'));
+      document.querySelectorAll('.day-btn').forEach((b,i)=>b.classList.toggle('on', i===0));
+      currentDay='Jeu 26';
+      renderPendingPhotos();
+    }
+
+    function selectDay(btn, day){
+      document.querySelectorAll('.day-btn').forEach(b=>b.classList.remove('on'));
+      btn.classList.add('on'); currentDay=day;
+    }
+    function setStars(n){
+      currentStars=n;
+      document.querySelectorAll('.star').forEach((s,i)=>s.classList.toggle('on', i<n));
+    }
+    function selectDecision(type, el){
+      currentDecision=type;
+      document.querySelectorAll('.pill').forEach(p=>p.classList.remove('on'));
+      el.classList.add('on');
+    }
+
+    function showTab(name){
+      document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+      document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+      document.getElementById('page-'+name).classList.add('active');
+      document.querySelectorAll('.tab')[['add','list','stats'].indexOf(name)].classList.add('active');
+      if(name==='list') renderList();
+      if(name==='stats') renderStats();
+    }
+
+    function setFilter(f, el){
+      currentFilter=f;
+      document.querySelectorAll('.chip').forEach(c=>c.classList.remove('on'));
+      el.classList.add('on'); renderList();
+    }
+
+    const decisionMeta = { buy:{label:'🛒 Acheter', cls:'buy'}, retry:{label:'🔄 Retester', cls:'retry'}, skip:{label:'✗ Non merci', cls:'skip'} };
+    function starsStr(n){ return n? '★'.repeat(n)+'☆'.repeat(5-n) : '—'; }
+
+    function renderList(){
+      checkStorage();
+      let filtered = currentFilter==='all' ? games
+        : currentFilter==='photo' ? games.filter(g=>g.photos && g.photos.length)
+        : games.filter(g=>g.decision===currentFilter);
+      const el=document.getElementById('gameList');
+      if(!filtered.length){
+        el.innerHTML='<div class="empty"><div class="empty-icon">🎲</div>Aucun jeu ici encore.</div>';
+        return;
+      }
+      el.innerHTML = filtered.map(g=>`
+        <div class="game-card ${g.decision||''}">
+          <div class="gc-top">
+            <div>
+              <div class="gc-name">${g.name}</div>
+              ${g.editor?`<div class="gc-editor">${g.editor}</div>`:''}
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
+              <div class="gc-stars">${starsStr(g.stars)}</div>
+              <div class="gc-del" onclick="deleteGame(${g.id})">🗑</div>
+            </div>
+          </div>
+          <div class="gc-meta">
+            <span class="badge day">${g.day}</span>
+            ${g.decision?`<span class="badge ${g.decision}">${decisionMeta[g.decision].label}</span>`:''}
+            ${g.price?`<span class="gc-price">${g.price}</span>`:''}
+            ${g.photos && g.photos.length?`<span style="font-size:12px;color:var(--muted)">📷 ${g.photos.length}</span>`:''}
+          </div>
+          ${g.note?`<div class="gc-note">${g.note}</div>`:''}
+          ${g.photos && g.photos.length?`<div class="gc-photos">${g.photos.map(p=>`<img class="gc-photo" src="${p}" onclick="openLightbox(this.src)" loading="lazy">`).join('')}</div>`:''}
+        </div>
+      `).join('');
+    }
+
+    function deleteGame(id){
+      if(!confirm('Supprimer ce jeu ?')) return;
+      games=games.filter(g=>g.id!==id);
+      save(); renderList();
+    }
+
+    function openLightbox(src){
+      document.getElementById('lightboxImg').src=src;
+      document.getElementById('lightbox').classList.add('open');
+    }
+    function closeLightbox(){ document.getElementById('lightbox').classList.remove('open'); }
+
+    function renderStats(){
+      const total=games.length;
+      const toBuy=games.filter(g=>g.decision==='buy');
+      const toRetry=games.filter(g=>g.decision==='retry');
+      const rated=games.filter(g=>g.stars);
+      const avg=rated.length?(rated.reduce((s,g)=>s+g.stars,0)/rated.length).toFixed(1):'—';
+      const totalPhotos=games.reduce((s,g)=>s+(g.photos?g.photos.length:0),0);
+      const perDay={'Jeu 26':0,'Ven 27':0,'Sam 28':0,'Dim 1':0};
+      games.forEach(g=>{ if(perDay[g.day]!==undefined) perDay[g.day]++; });
+
+      document.getElementById('statsWrap').innerHTML=`
+        <div class="stat-row"><div class="stat-label">Jeux testés</div><div class="stat-val gold">${total}</div></div>
+        <div class="stat-row"><div class="stat-label">À acheter</div><div class="stat-val green">${toBuy.length}</div></div>
+        <div class="stat-row"><div class="stat-label">À retester</div><div class="stat-val orange">${toRetry.length}</div></div>
+        <div class="stat-row"><div class="stat-label">Note moyenne</div><div class="stat-val gold">${avg}${avg!=='—'?'★':''}</div></div>
+        <div class="stat-row"><div class="stat-label">Photos prises</div><div class="stat-val" style="color:var(--muted)">📷 ${totalPhotos}</div></div>
+        <div class="stat-row" style="flex-direction:column;align-items:stretch;gap:10px">
+          <div class="stat-label">Par jour</div>
+          ${Object.entries(perDay).map(([d,n])=>`
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <span style="font-size:14px">${d}</span>
+              <span style="font-weight:900;font-size:22px;color:var(--red)">${n} jeu${n>1?'x':''}</span>
+            </div>`).join('')}
+        </div>
+        ${toBuy.length?`<div class="buy-list"><div class="buy-list-title">🛒 Liste d'achats</div>${toBuy.map(g=>`<div class="buy-item"><span class="buy-item-name">${g.name}</span><span class="buy-item-price">${g.price||'?'}</span></div>`).join('')}</div>`:''}
+      `;
+    }
+  </script>
 </body>
 </html>
