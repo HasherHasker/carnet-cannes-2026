@@ -733,7 +733,19 @@
             ${g.photos && g.photos.length?`<span style="font-size:12px;color:var(--muted)">📷 ${g.photos.length}</span>`:''}
           </div>
           ${g.note?`<div class="gc-note">${g.note}</div>`:''}
-          ${g.photos && g.photos.length?`<div class="gc-photos">${g.photos.map(p=>`<img class="gc-photo" src="${p}" onclick="openLightbox(this.src)" loading="lazy">`).join('')}</div>`:''}
+          ${g.photos && g.photos.length?`
+<div class="gc-photos">
+${g.photos.map((p,i)=>`
+  <div style="position:relative">
+    <img class="gc-photo" src="${p}" onclick="openLightbox(this.src)" loading="lazy">
+    <button 
+      onclick="removePhotoFromGame(${g.id},${i})"
+      style="position:absolute;top:4px;right:4px;background:rgba(0,0,0,0.6);color:white;border:none;border-radius:50%;width:22px;height:22px;font-size:12px;cursor:pointer">
+      ✕
+    </button>
+  </div>
+`).join('')}
+</div>`:''}
         </div>
       `).join('');
     }
@@ -754,6 +766,15 @@
       const total=games.length;
       const toBuy=games.filter(g=>g.decision==='buy');
       const toRetry=games.filter(g=>g.decision==='retry');
+      
+   function removePhotoFromGame(gameId, photoIndex){
+      if(!confirm('Supprimer cette photo ?')) return;
+      const game = games.find(g=>g.id===gameId);
+      if(!game) return;
+      game.photos.splice(photoIndex,1);
+      save();
+      renderList()
+   }
       const rated=games.filter(g=>g.stars);
       const avg=rated.length?(rated.reduce((s,g)=>s+g.stars,0)/rated.length).toFixed(1):'—';
       const totalPhotos=games.reduce((s,g)=>s+(g.photos?g.photos.length:0),0);
